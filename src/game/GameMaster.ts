@@ -297,7 +297,7 @@ ${allSpeeches}
         const response = await this.askPlayer(wolf, prompt);
         const parsed = parseResponse(response);
 
-        wolfChatHistory.push(`${wolf.id}号（${wolf.name}）：${parsed.speech}`);
+        wolfChatHistory.push(`${wolf.id}号：${parsed.speech}`);
         eventBus.emit('game-event', {
           type: 'wolf_chat',
           playerId: wolf.id,
@@ -524,7 +524,7 @@ ${allSpeeches}
         const parsed = parseResponse(response);
 
         // 广播发言给所有存活玩家
-        const speechMsg = `${player.id}号（${player.name}）：${parsed.speech}`;
+        const speechMsg = `${player.id}号：${parsed.speech}`;
         for (const other of getAlivePlayers(this.state)) {
           if (other.id !== player.id) {
             this.addPrivateMessage(other, speechMsg);
@@ -620,7 +620,7 @@ ${allSpeeches}
     });
 
     // 广播
-    const msg = `${player.id}号（${player.name}）被${cause === 'voted' ? '投票放逐' : '猎人射杀'}。`;
+    const msg = `${player.id}号被${cause === 'voted' ? '投票放逐' : '猎人射杀'}。`;
     for (const p of getAlivePlayers(this.state)) {
       this.addPrivateMessage(p, `[系统] ${msg}`);
     }
@@ -668,7 +668,7 @@ ${allSpeeches}
     const parsed = parseResponse(response);
 
     // 广播遗言
-    const msg = `[遗言] ${player.id}号（${player.name}）：${parsed.speech}`;
+    const msg = `[遗言] ${player.id}号：${parsed.speech}`;
     for (const p of getAlivePlayers(this.state)) {
       this.addPrivateMessage(p, msg);
     }
