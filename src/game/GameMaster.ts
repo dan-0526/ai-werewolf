@@ -110,6 +110,56 @@ export class GameMaster {
         break;
       }
     }
+
+    // 复盘鞭尸模式
+    await this.postGameReview();
+  }
+
+  // === 复盘：身份揭晓 + MVP/最差投票 ===
+
+  private async postGameReview(): Promise<void> {
+    eventBus.emit('game-event', { type: 'system_message', content: '=== 复盘时间 · 身份揭晓 ===' });
+
+    // 构建身份揭晓信息
+    const roleNames: Record<string, string> = {
+      werewolf: '狼人', seer: '预言家', witch: '女巫', hunter: '猎人', villager: '村民',
+    };
+    const reveal = this.state.players.map((p) =>
+      `${p.id}号（${p.name}）：${roleNames[p.role]}${p.alive ? '' : '（已死亡）'}`,
+    ).join('\n');
+
+    const reviewPrompt = `游戏结束了！以下是所有玩家的真实身份：
+
+${reveal}
+
+现在是复盘时间。请你回顾整局游戏，评选：
+1. MVP（全场最佳玩家）：谁的表现最出色？为什么？
+2. 最差玩家：谁的表现最拉胯？为什么？
+
+你可以夸夸表现好的，也可以吐槽表现差的。有冤报冤，有仇报仇。
+请用 JSON 格式回复：
+{
+  "private_note": "你的复盘分析",
+  "speech": "你的公开评价（其他玩家能看到）",
+  "action": { "type": "skip" }
+}`;
+
+    for (const player of this.state.players) {
+      const response = await this.askPlayer(player, reviewPrompt);
+      const parsed = parseResponse(response);
+
+      eventBus.emit('game-event', {
+        type: 'player_speak',
+        playerId: player.id,
+        playerName: player.name,
+        content: `[复盘] ${parsed.speech}`,
+        privateNote: parsed.privateNote,
+      });
+
+      await sleep(this.config.speakDelayMs);
+    }
+
+    eventBus.emit('game-event', { type: 'system_message', content: '=== 复盘结束 ===' });
   }
 
   // === 夜晚阶段 ===
