@@ -587,26 +587,45 @@ ${reveal}
     });
   }
 
-  private async askPlayer(player: Player, userMessage: string): Promise<string> {
+  private async askPlayer(player: Player, userMessage: string, maxRetries = 2): Promise<string> {
     player.messageHistory.push({ role: 'user', content: userMessage });
 
-    try {
-      const response = await player.provider.chat(player.messageHistory);
-      player.messageHistory.push({ role: 'assistant', content: response });
-      this.logger?.logRaw(player.id, player.name, player.messageHistory, response);
-      return response;
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      console.error(`[ERROR] ${player.name} API 调用失败: ${errMsg}`);
-      // 返回一个兜底的 skip 响应
-      const fallback = JSON.stringify({
-        private_note: `API 调用失败: ${errMsg}`,
-        speech: '我暂时没有什么想说的。',
-        action: { type: 'skip' },
-      });
-      player.messageHistory.push({ role: 'assistant', content: fallback });
-      return fallback;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await player.provider.chat(player.messageHistory);
+
+        // 空输出视为失败，重试
+        if (!response || !response.trim()) {
+          if (attempt < maxRetries) {
+            console.warn(`  [RETRY] ${player.name} 返回空内容，第${attempt + 1}次重试...`);
+            await sleep(1000 * (attempt + 1));
+            continue;
+          }
+          throw new Error('API returned empty response after retries');
+        }
+
+        player.messageHistory.push({ role: 'assistant', content: response });
+        this.logger?.logRaw(player.id, player.name, player.messageHistory, response);
+        return response;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (attempt < maxRetries) {
+          console.warn(`  [RETRY] ${player.name} 第${attempt + 1}次重试 (${errMsg.slice(0, 80)})`);
+          await sleep(1000 * (attempt + 1));
+          continue;
+        }
+        console.error(`[ERROR] ${player.name} API 调用失败 (${maxRetries + 1}次尝试): ${errMsg}`);
+      }
     }
+
+    // 全部重试失败，返回兜底响应
+    const fallback = JSON.stringify({
+      private_note: 'API 调用失败，已重试多次',
+      speech: '我暂时没有什么想说的。',
+      action: { type: 'skip' },
+    });
+    player.messageHistory.push({ role: 'assistant', content: fallback });
+    return fallback;
   }
 
   private addPrivateMessage(player: Player, content: string): void {
