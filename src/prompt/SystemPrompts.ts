@@ -18,7 +18,7 @@ const GAME_RULES_TEMPLATE = `你正在参加一场9人狼人杀游戏。
 禁止使用 Markdown 代码块（不要写 \`\`\`json），禁止在 JSON 前后添加任何文字。
 
 {
-  "private_note": "你的内心分析（只有法官能看到，其他玩家看不到）",
+  "private_note": "你的内心分析（只有上帝能看到，其他玩家看不到）",
   "speech": "你要公开说的话（其他玩家能看到）",
   "action": { "type": "行动类型", "target": 座位号 }
 }
