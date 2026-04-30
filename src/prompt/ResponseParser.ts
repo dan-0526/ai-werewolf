@@ -9,6 +9,10 @@ export function parseResponse(raw: string): ParsedResponse {
   const jsonResult = tryParseJSON(raw);
   if (jsonResult) return jsonResult;
 
+  // JSON 解析失败时，尝试从原始文本中正则提取 speech/private_note 字段（处理不完整 JSON）
+  const fieldResult = tryExtractFields(raw);
+  if (fieldResult) return fieldResult;
+
   // fallback: 正则提取
   return parseFromText(raw);
 }
@@ -18,16 +22,37 @@ function tryParseJSON(raw: string): ParsedResponse | null {
   const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/) || raw.match(/(\{[\s\S]*\})/);
   if (!jsonMatch) return null;
 
+  let jsonStr = jsonMatch[1].trim();
+
+  // 修复 JSON 字符串值里的真实换行符（部分模型不转义）
+  jsonStr = jsonStr.replace(/"([^"]*?)"/gs, (match) =>
+    match.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t'),
+  );
+
   try {
-    const obj = JSON.parse(jsonMatch[1].trim());
+    const obj = JSON.parse(jsonStr);
     return {
       privateNote: obj.private_note ?? obj.privateNote ?? '',
       speech: obj.speech ?? '',
       action: normalizeAction(obj.action),
     };
   } catch {
-    return null;
+    // JSON 不完整时，尝试用正则直接提取 speech 字段
+    return tryExtractFields(jsonMatch[1]);
   }
+}
+
+/** 从含有 JSON 字段的文本中正则提取 speech/private_note（处理不完整 JSON、未闭合代码块等） */
+function tryExtractFields(text: string): ParsedResponse | null {
+  const speechMatch = text.match(/"speech"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)/s);
+  if (!speechMatch) return null;
+
+  const noteMatch = text.match(/"private_note"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)/s);
+  return {
+    privateNote: noteMatch?.[1]?.replace(/\\n/g, '\n') ?? '',
+    speech: speechMatch[1].replace(/\\n/g, '\n'),
+    action: DEFAULT_ACTION,
+  };
 }
 
 function parseFromText(raw: string): ParsedResponse {

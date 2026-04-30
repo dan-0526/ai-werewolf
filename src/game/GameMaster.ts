@@ -115,7 +115,7 @@ export class GameMaster {
     await this.postGameReview();
   }
 
-  // === 复盘：身份揭晓 + MVP/最差投票 ===
+  // === 复盘：身份揭晓 + MVP/最差投票 + 当事人回应 ===
 
   private async postGameReview(): Promise<void> {
     eventBus.emit('game-event', { type: 'system_message', content: '=== 复盘时间 · 身份揭晓 ===' });
@@ -141,12 +141,32 @@ ${reveal}
 {
   "private_note": "你的复盘分析",
   "speech": "你的公开评价（其他玩家能看到）",
+  "mvp": 座位号（数字）,
+  "worst": 座位号（数字）,
   "action": { "type": "skip" }
 }`;
+
+    // 收集所有评价和投票
+    const mvpVotes: number[] = [];
+    const worstVotes: number[] = [];
+    const allSpeeches: string[] = [];
 
     for (const player of this.state.players) {
       const response = await this.askPlayer(player, reviewPrompt);
       const parsed = parseResponse(response);
+
+      // 提取 mvp/worst 投票
+      const raw = response.match(/\{[\s\S]*\}/);
+      if (raw) {
+        try {
+          const obj = JSON.parse(raw[0]);
+          if (typeof obj.mvp === 'number') mvpVotes.push(obj.mvp);
+          if (typeof obj.worst === 'number') worstVotes.push(obj.worst);
+        } catch { /* 解析失败忽略 */ }
+      }
+
+      const speechText = `${player.id}号（${player.name}）：${parsed.speech}`;
+      allSpeeches.push(speechText);
 
       eventBus.emit('game-event', {
         type: 'player_speak',
@@ -159,7 +179,82 @@ ${reveal}
       await sleep(this.config.speakDelayMs);
     }
 
+    // 统计票数：取最高票玩家，全散票（每人都只有1票）则跳过，平票则都发言
+    const mvpIds = this.tallyTopVotes(mvpVotes);
+    const worstIds = this.tallyTopVotes(worstVotes);
+
+    // 当事人回应
+    if (mvpIds.length > 0 || worstIds.length > 0) {
+      eventBus.emit('game-event', { type: 'system_message', content: '=== MVP & 最差玩家回应 ===' });
+
+      const allSpeechesText = allSpeeches.join('\n');
+
+      for (const id of mvpIds) {
+        const player = getPlayerById(this.state, id);
+        if (player) {
+          const count = mvpVotes.filter((v) => v === id).length;
+          await this.reviewResponse(player, 'mvp', count, allSpeechesText);
+        }
+      }
+
+      for (const id of worstIds) {
+        const player = getPlayerById(this.state, id);
+        if (player) {
+          const count = worstVotes.filter((v) => v === id).length;
+          await this.reviewResponse(player, 'worst', count, allSpeechesText);
+        }
+      }
+    }
+
     eventBus.emit('game-event', { type: 'system_message', content: '=== 复盘结束 ===' });
+  }
+
+  private async reviewResponse(
+    player: Player,
+    type: 'mvp' | 'worst',
+    voteCount: number,
+    allSpeeches: string,
+  ): Promise<void> {
+    const label = type === 'mvp' ? 'MVP（全场最佳）' : '最差玩家';
+    const prompt = `复盘投票结果出来了，你被评为本局的【${label}】，获得了 ${voteCount} 票。
+
+以下是所有玩家的复盘评价：
+${allSpeeches}
+
+现在轮到你回应。你可以发表获奖感言、为自己辩解、反驳别人的评价，随你发挥。
+请用 JSON 格式回复：
+{
+  "private_note": "你的内心想法",
+  "speech": "你的公开回应（所有人能看到）",
+  "action": { "type": "skip" }
+}`;
+
+    const response = await this.askPlayer(player, prompt);
+    const parsed = parseResponse(response);
+
+    const tag = type === 'mvp' ? '👑 MVP回应' : '💀 最差玩家回应';
+
+    eventBus.emit('game-event', {
+      type: 'player_speak',
+      playerId: player.id,
+      playerName: player.name,
+      content: `[${tag}] ${parsed.speech}`,
+      privateNote: parsed.privateNote,
+    });
+
+    await sleep(this.config.speakDelayMs);
+  }
+
+  /** 统计投票，返回最高票玩家 ID 列表。全散票（最高票仅 1 票）返回空数组，平票返回所有并列者 */
+  private tallyTopVotes(votes: number[]): number[] {
+    if (votes.length === 0) return [];
+    const counts = new Map<number, number>();
+    for (const v of votes) {
+      counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+    const maxCount = Math.max(...counts.values());
+    if (maxCount <= 1) return [];
+    return [...counts.entries()].filter(([, c]) => c === maxCount).map(([id]) => id);
   }
 
   // === 夜晚阶段 ===
