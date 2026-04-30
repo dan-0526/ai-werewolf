@@ -49,7 +49,7 @@ export class ClaudeFetchProvider implements AIProvider {
       headers,
       body: JSON.stringify({
         model: this.modelName,
-        max_tokens: 512,
+        max_tokens: 1024,
         stream: true,
         ...(system ? { system } : {}),
         messages: rest,

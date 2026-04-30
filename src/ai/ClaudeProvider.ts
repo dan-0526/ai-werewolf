@@ -36,7 +36,7 @@ export class ClaudeProvider implements AIProvider {
 
     const resp = await this.client.messages.create({
       model: this.modelName,
-      max_tokens: 512,
+      max_tokens: 1024,
       ...(system ? { system } : {}),
       messages: rest,
     });
