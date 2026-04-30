@@ -40,7 +40,7 @@ test('GPT provider uses OpenAI v1 chat completions under a shared root base URL'
 
     const response = await provider.chat([{ role: 'user', content: 'ping' }]);
 
-    assert.equal(response, 'OK');
+    assert.equal(response.content, 'OK');
     assert.equal(requestedUrl, 'https://gpt-ai.example/v1/chat/completions');
   } finally {
     globalThis.fetch = originalFetch;
@@ -84,7 +84,7 @@ test('GPT provider can use Responses API wire format', async () => {
 
     const response = await provider.chat([{ role: 'user', content: 'ping' }]);
 
-    assert.equal(response, 'OK');
+    assert.equal(response.content, 'OK');
     assert.equal(requestedUrl, 'https://gpt-ai.example/v1/responses');
     assert.ok(requestHeaders!.get('session_id'));
     assert.ok(requestHeaders!.get('x-client-request-id'));

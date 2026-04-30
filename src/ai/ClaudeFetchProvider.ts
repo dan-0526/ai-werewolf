@@ -1,6 +1,6 @@
 // ClaudeFetchProvider — 用原生 fetch + streaming 调 Claude Messages API
 
-import type { AIProvider, ChatMessage } from './AIProvider.js';
+import type { AIProvider, ChatMessage, ChatResult } from './AIProvider.js';
 
 export type ClaudeAuthMode = 'api-key' | 'bearer';
 
@@ -16,7 +16,7 @@ export class ClaudeFetchProvider implements AIProvider {
     this.modelName = model;
   }
 
-  async chat(messages: ChatMessage[]): Promise<string> {
+  async chat(messages: ChatMessage[]): Promise<ChatResult> {
     const start = Date.now();
     console.log(`  [${this.modelName}] calling...`);
 
@@ -49,8 +49,9 @@ export class ClaudeFetchProvider implements AIProvider {
       headers,
       body: JSON.stringify({
         model: this.modelName,
-        max_tokens: 1024,
+        max_tokens: 16000,
         stream: true,
+        thinking: { type: 'enabled', budget_tokens: 10000 },
         ...(system ? { system } : {}),
         messages: rest,
       }),
@@ -62,22 +63,24 @@ export class ClaudeFetchProvider implements AIProvider {
       throw new Error(`${this.modelName} API error (${resp.status}): ${text.slice(0, 200)}`);
     }
 
-    // 从 SSE 流中拼出完整文本
-    const text = await this.readStream(resp);
+    // 从 SSE 流中拼出完整文本和思考链
+    const { text, thinking } = await this.readStream(resp);
 
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     console.log(`  [${this.modelName}] done in ${elapsed}s`);
 
-    return text;
+    return { content: text, reasoning: thinking || undefined };
   }
 
-  private async readStream(resp: Response): Promise<string> {
+  private async readStream(resp: Response): Promise<{ text: string; thinking: string }> {
     const reader = resp.body?.getReader();
     if (!reader) throw new Error('No response body');
 
     const decoder = new TextDecoder();
-    let result = '';
+    let text = '';
+    let thinking = '';
     let buffer = '';
+    let currentBlockType: 'text' | 'thinking' | null = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -94,9 +97,16 @@ export class ClaudeFetchProvider implements AIProvider {
 
         try {
           const event = JSON.parse(data);
-          // content_block_delta 事件包含文本片段
-          if (event.type === 'content_block_delta' && event.delta?.text) {
-            result += event.delta.text;
+          if (event.type === 'content_block_start') {
+            currentBlockType = event.content_block?.type === 'thinking' ? 'thinking' : 'text';
+          } else if (event.type === 'content_block_delta') {
+            if (currentBlockType === 'thinking' && event.delta?.thinking) {
+              thinking += event.delta.thinking;
+            } else if (event.delta?.text) {
+              text += event.delta.text;
+            }
+          } else if (event.type === 'content_block_stop') {
+            currentBlockType = null;
           }
         } catch {
           // 忽略非 JSON 行
@@ -104,6 +114,6 @@ export class ClaudeFetchProvider implements AIProvider {
       }
     }
 
-    return result;
+    return { text, thinking };
   }
 }

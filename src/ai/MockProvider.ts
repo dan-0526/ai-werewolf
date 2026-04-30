@@ -1,12 +1,12 @@
 // MockProvider — 测试状态机用，不调 API
 
-import type { AIProvider, ChatMessage } from './AIProvider.js';
+import type { AIProvider, ChatMessage, ChatResult } from './AIProvider.js';
 
 export class MockProvider implements AIProvider {
   readonly modelName = 'mock';
   private callCount = 0;
 
-  async chat(messages: ChatMessage[]): Promise<string> {
+  async chat(messages: ChatMessage[]): Promise<ChatResult> {
     this.callCount++;
     const lastMsg = messages[messages.length - 1]?.content ?? '';
 
@@ -33,10 +33,10 @@ export class MockProvider implements AIProvider {
       action = { type: 'shoot', target: randomTarget };
     }
 
-    return JSON.stringify({
+    return { content: JSON.stringify({
       private_note: `[Mock] 第${this.callCount}次调用`,
       speech: `我是Mock玩家，这是我的第${this.callCount}次发言。`,
       action,
-    });
+    }) };
   }
 }

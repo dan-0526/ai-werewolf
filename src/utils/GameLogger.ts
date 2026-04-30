@@ -34,7 +34,7 @@ export class GameLogger {
   }
 
   // 记录原始 API 请求/响应
-  logRaw(playerId: number, playerName: string, messages: unknown[], response: string): void {
+  logRaw(playerId: number, playerName: string, messages: unknown[], response: string, reasoning?: string): void {
     this.rawStream.write(JSON.stringify({
       ts: new Date().toISOString(),
       playerId,
@@ -42,6 +42,7 @@ export class GameLogger {
       promptLength: JSON.stringify(messages).length,
       responseLength: response.length,
       response,
+      ...(reasoning ? { reasoning } : {}),
     }) + '\n');
   }
 

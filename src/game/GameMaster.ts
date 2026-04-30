@@ -139,11 +139,9 @@ ${reveal}
 你可以夸夸表现好的，也可以吐槽表现差的。有冤报冤，有仇报仇。
 请用 JSON 格式回复：
 {
-  "private_note": "你的复盘分析",
   "speech": "你的公开评价（其他玩家能看到）",
   "mvp": 座位号（数字）,
-  "worst": 座位号（数字）,
-  "action": { "type": "skip" }
+  "worst": 座位号（数字）
 }`;
 
     // 收集所有评价和投票
@@ -222,12 +220,7 @@ ${reveal}
 ${allSpeeches}
 
 现在轮到你回应。你可以发表获奖感言、为自己辩解、反驳别人的评价，随你发挥。
-请用 JSON 格式回复：
-{
-  "private_note": "你的内心想法",
-  "speech": "你的公开回应（所有人能看到）",
-  "action": { "type": "skip" }
-}`;
+请用 JSON 回复：{ "speech": "你的公开回应" }`;
 
     const response = await this.askPlayer(player, prompt);
     const parsed = parseResponse(response);
@@ -292,7 +285,7 @@ ${allSpeeches}
           ? `\n之前的讨论：\n${wolfChatHistory.join('\n')}`
           : '';
 
-        const prompt = `现在是第${this.state.day}天夜晚，狼人行动时间。${chatContext}\n\n存活的非狼人玩家：${targetList}\n\n请和队友讨论今晚要杀谁，并给出你的投票。`;
+        const prompt = `现在是第${this.state.day}天夜晚，狼人行动时间。${chatContext}\n\n存活的非狼人玩家：${targetList}\n\n请和队友讨论今晚要杀谁，并给出你的投票。\n请用 JSON 回复：{ "speech": "你对队友说的话" }`;
 
         const response = await this.askPlayer(wolf, prompt);
         const parsed = parseResponse(response);
@@ -312,7 +305,7 @@ ${allSpeeches}
     // 狼人投票
     const votes: number[] = [];
     for (const wolf of wolves) {
-      const votePrompt = `讨论结束，请投票选择今晚要杀的目标。存活的非狼人玩家：${targetList}\n请用 JSON 格式回复，action.type 为 "vote"，target 为座位号。`;
+      const votePrompt = `讨论结束，请投票选择今晚要杀的目标。存活的非狼人玩家：${targetList}\n请用 JSON 回复：{ "action": { "type": "vote", "target": 座位号 } }`;
       const response = await this.askPlayer(wolf, votePrompt);
       const parsed = parseResponse(response);
 
@@ -334,7 +327,7 @@ ${allSpeeches}
     const alivePlayers = getAlivePlayers(this.state).filter((p) => p.id !== seer.id);
     const targetList = alivePlayers.map((p) => `${p.id}号`).join('、');
 
-    const prompt = `现在是第${this.state.day}天夜晚，预言家查验时间。\n存活玩家（除你自己）：${targetList}\n请选择一名玩家查验身份。action.type 为 "check"，target 为座位号。`;
+    const prompt = `现在是第${this.state.day}天夜晚，预言家查验时间。\n存活玩家（除你自己）：${targetList}\n请选择一名玩家查验身份。\n请用 JSON 回复：{ "action": { "type": "check", "target": 座位号 } }`;
 
     const response = await this.askPlayer(seer, prompt);
     const parsed = parseResponse(response);
@@ -374,7 +367,7 @@ ${allSpeeches}
       const isSelf = killedPlayer.id === witch.id;
 
       if (!isSelf || canSelfHeal) {
-        const healPrompt = `现在是第${this.state.day}天夜晚，女巫行动时间。\n今晚 ${killedPlayer.id}号玩家被狼人杀害。\n你还有解药，是否使用解药救他？\naction.type 为 "heal"（救）或 "skip"（不救）。`;
+        const healPrompt = `现在是第${this.state.day}天夜晚，女巫行动时间。\n今晚 ${killedPlayer.id}号玩家被狼人杀害。\n你还有解药，是否使用解药救他？\n请用 JSON 回复：{ "action": { "type": "heal" } } 或 { "action": { "type": "skip" } }`;
 
         const response = await this.askPlayer(witch, healPrompt);
         const parsed = parseResponse(response);
@@ -397,7 +390,7 @@ ${allSpeeches}
       const alivePlayers = getAlivePlayers(this.state).filter((p) => p.id !== witch.id);
       const targetList = alivePlayers.map((p) => `${p.id}号`).join('、');
 
-      const poisonPrompt = `你还有毒药。存活玩家：${targetList}\n是否使用毒药？\naction.type 为 "poison"（毒，需要 target）或 "skip"（不使用）。`;
+      const poisonPrompt = `你还有毒药。存活玩家：${targetList}\n是否使用毒药？\n请用 JSON 回复：{ "action": { "type": "poison", "target": 座位号 } } 或 { "action": { "type": "skip" } }`;
 
       const response = await this.askPlayer(witch, poisonPrompt);
       const parsed = parseResponse(response);
@@ -472,16 +465,6 @@ ${allSpeeches}
       this.addPrivateMessage(player, `[系统] ${deathMsg}`);
     }
 
-    // 遗言
-    if (this.state.rules.lastWords) {
-      for (const id of deaths) {
-        const player = getPlayerById(this.state, id);
-        if (player) {
-          await this.lastWords(player);
-        }
-      }
-    }
-
     // 胜负判定
     const winResult = checkWin(this.state);
     if (winResult.gameOver) {
@@ -518,7 +501,7 @@ ${allSpeeches}
       for (const player of order) {
         if (!player.alive) continue;
 
-        const prompt = `现在是第${this.state.day}天白天讨论${roundLabel}，轮到你发言。\n请分析局势，表达你的观点。你可以指出你怀疑的人，也可以为自己辩护。\n注意：这是讨论环节，action.type 请填 "skip"。`;
+        const prompt = `现在是第${this.state.day}天白天讨论${roundLabel}，轮到你发言。\n请分析局势，表达你的观点。你可以指出你怀疑的人，也可以为自己辩护。\n请用 JSON 回复：{ "speech": "你的公开发言" }`;
 
         const response = await this.askPlayer(player, prompt);
         const parsed = parseResponse(response);
@@ -577,11 +560,11 @@ ${allSpeeches}
     const votes: number[] = [];
 
     for (const player of alive) {
-      const prompt = `投票时间！存活玩家：${targetList}\n请投票选择你认为应该被放逐的玩家。\naction.type 为 "vote"，target 为座位号。不能投自己。`;
+      const prompt = `投票时间！存活玩家：${targetList}\n请投票选择你认为应该被放逐的玩家，不能投自己。\n请用 JSON 回复：{ "action": { "type": "vote", "target": 座位号 } }`;
 
       let voted = false;
       for (let attempt = 0; attempt < 2 && !voted; attempt++) {
-        const askPrompt = attempt === 0 ? prompt : `你的投票无效，请重新投票。存活玩家：${targetList}\naction.type 为 "vote"，target 为座位号。不能投自己。`;
+        const askPrompt = attempt === 0 ? prompt : `你的投票无效，请重新投票。存活玩家：${targetList}\n请用 JSON 回复：{ "action": { "type": "vote", "target": 座位号 } }，不能投自己。`;
         const response = await this.askPlayer(player, askPrompt);
         const parsed = parseResponse(response);
 
@@ -648,7 +631,7 @@ ${allSpeeches}
     const alive = getAlivePlayers(this.state);
     const targetList = alive.map((p) => `${p.id}号`).join('、');
 
-    const prompt = `你是猎人，你已经死亡。你可以开枪带走一名玩家。\n存活玩家：${targetList}\naction.type 为 "shoot"，target 为座位号。如果不想开枪，action.type 为 "skip"。`;
+    const prompt = `你是猎人，你已经死亡。你可以开枪带走一名玩家。\n存活玩家：${targetList}\n请用 JSON 回复：{ "action": { "type": "shoot", "target": 座位号 } } 或 { "action": { "type": "skip" } }`;
 
     const response = await this.askPlayer(hunter, prompt);
     const parsed = parseResponse(response);
@@ -662,7 +645,7 @@ ${allSpeeches}
   }
 
   private async lastWords(player: Player): Promise<void> {
-    const prompt = `你已经死亡，现在是你的遗言时间。你可以说任何想说的话。\naction.type 为 "skip"。`;
+    const prompt = `你已经死亡，现在是你的遗言时间。你可以说任何想说的话。\n请用 JSON 回复：{ "speech": "你的遗言" }`;
 
     const response = await this.askPlayer(player, prompt);
     const parsed = parseResponse(response);
@@ -682,31 +665,32 @@ ${allSpeeches}
     });
   }
 
-  private async askPlayer(player: Player, userMessage: string, maxRetries = 2): Promise<string> {
+  private async askPlayer(player: Player, userMessage: string, maxRetries = 4): Promise<string> {
     player.messageHistory.push({ role: 'user', content: userMessage });
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const response = await player.provider.chat(player.messageHistory);
+        const result = await player.provider.chat(player.messageHistory);
+        const response = result.content;
 
         // 空输出视为失败，重试
         if (!response || !response.trim()) {
           if (attempt < maxRetries) {
             console.warn(`  [RETRY] ${player.name} 返回空内容，第${attempt + 1}次重试...`);
-            await sleep(1000 * (attempt + 1));
+            await sleep(2000 * (attempt + 1));
             continue;
           }
           throw new Error('API returned empty response after retries');
         }
 
         player.messageHistory.push({ role: 'assistant', content: response });
-        this.logger?.logRaw(player.id, player.name, player.messageHistory, response);
+        this.logger?.logRaw(player.id, player.name, player.messageHistory, response, result.reasoning);
         return response;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         if (attempt < maxRetries) {
           console.warn(`  [RETRY] ${player.name} 第${attempt + 1}次重试 (${errMsg.slice(0, 80)})`);
-          await sleep(1000 * (attempt + 1));
+          await sleep(2000 * (attempt + 1));
           continue;
         }
         console.error(`[ERROR] ${player.name} API 调用失败 (${maxRetries + 1}次尝试): ${errMsg}`);
