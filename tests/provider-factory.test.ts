@@ -106,7 +106,7 @@ test('GPT provider can use Responses API wire format', async () => {
   }
 });
 
-test('GPT provider preserves Codex API base path for Responses API', async () => {
+test('GPT provider preserves custom API base path for Responses API', async () => {
   process.env.TEST_GPT_AI_KEY = 'sk-test';
 
   const originalFetch = globalThis.fetch;
