@@ -491,6 +491,8 @@ ${allSpeeches}
       ? shuffleArray(alive)
       : alive.sort((a, b) => a.id - b.id);
 
+    const aliveList = alive.map((p) => `${p.id}号`).join('、');
+
     for (let round = 0; round < this.config.discussionRounds; round++) {
       const roundLabel = this.config.discussionRounds > 1 ? `（第${round + 1}轮）` : '';
       eventBus.emit('game-event', {
@@ -501,7 +503,7 @@ ${allSpeeches}
       for (const player of order) {
         if (!player.alive) continue;
 
-        const prompt = `现在是第${this.state.day}天白天讨论${roundLabel}，轮到你发言。\n请分析局势，表达你的观点。你可以指出你怀疑的人，也可以为自己辩护。\n请用 JSON 回复：{ "speech": "你的公开发言" }`;
+        const prompt = `现在是第${this.state.day}天白天讨论${roundLabel}，轮到你发言。\n当前存活：${aliveList}（共${alive.length}人）\n请用 JSON 回复：{ "speech": "你的公开发言" }`;
 
         const response = await this.askPlayer(player, prompt);
         const parsed = parseResponse(response);
