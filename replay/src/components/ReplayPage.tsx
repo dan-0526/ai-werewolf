@@ -9,6 +9,7 @@ import PhaseTransition from './PhaseTransition';
 import SystemMessage from './SystemMessage';
 import VotePanel from './VotePanel';
 import GameOverScreen from './GameOverScreen';
+import ModelAvatar from './ModelAvatar';
 
 interface Props {
   meta: ReplayMeta;
@@ -25,7 +26,7 @@ interface SubtitleState {
 }
 
 const ReplayPage: FC<Props> = ({ meta, events, dataDir, layout }) => {
-  const { preload, play: playAudio, stop: stopAudio } = useAudioPlayer(dataDir);
+  const { preload, play: playAudio } = useAudioPlayer(dataDir);
 
   const [currentPhase, setCurrentPhase] = useState<string>('init');
   const [currentDay, setCurrentDay] = useState(1);
@@ -55,7 +56,6 @@ const ReplayPage: FC<Props> = ({ meta, events, dataDir, layout }) => {
         setTimeout(() => setShowPhaseTransition(false), 1800);
         break;
       }
-
       case 'player_speak':
       case 'wolf_chat': {
         const pid = e.playerId;
@@ -72,7 +72,6 @@ const ReplayPage: FC<Props> = ({ meta, events, dataDir, layout }) => {
         if (event.audio) playAudio(event.audio.file);
         break;
       }
-
       case 'system_message': {
         setSpeakingId(undefined);
         setSubtitle(null);
@@ -81,7 +80,6 @@ const ReplayPage: FC<Props> = ({ meta, events, dataDir, layout }) => {
         if (event.audio) playAudio(event.audio.file);
         break;
       }
-
       case 'vote': {
         setSpeakingId(undefined);
         setSubtitle(null);
@@ -91,15 +89,12 @@ const ReplayPage: FC<Props> = ({ meta, events, dataDir, layout }) => {
         }
         break;
       }
-
       case 'death': {
         if (e.playerId != null) {
           setDeadIds((prev) => new Set([...prev, e.playerId!]));
         }
-        // 不清除字幕，让遗言可以紧接着显示
         break;
       }
-
       case 'action_result': {
         if (e.result) {
           setSystemMsg(e.result);
@@ -107,7 +102,6 @@ const ReplayPage: FC<Props> = ({ meta, events, dataDir, layout }) => {
         }
         break;
       }
-
       case 'game_over': {
         setSpeakingId(undefined);
         setSubtitle(null);
@@ -125,73 +119,77 @@ const ReplayPage: FC<Props> = ({ meta, events, dataDir, layout }) => {
 
   const [timeline, controls] = useTimeline(events, handleEvent);
 
-  const themeClass = isNightPhase(currentPhase) ? 'theme-night' : 'theme-day';
+  const isNight = isNightPhase(currentPhase);
+  const themeClass = isNight ? 'theme-night' : 'theme-day';
+  const layoutClass = layout === 'landscape' ? 'layout-landscape' : 'layout-portrait';
 
-  // 中间内容区：只放投票和系统消息
+  // 当前发言玩家
+  const speakingPlayer = speakingId != null
+    ? meta.players.find((p) => p.id === speakingId)
+    : undefined;
+
+  // 中央内容：投票 > 系统消息 > 台词气泡
   const centerContent = useMemo(() => {
     if (currentPhase === 'day_vote' || currentPhase === 'day_revote') {
       return <VotePanel votes={votes} players={meta.players} />;
     }
     if (showSystemMsg && systemMsg) {
-      return <SystemMessage content={systemMsg} visible={true} />;
+      return <SystemMessage content={systemMsg} visible />;
     }
     return null;
   }, [currentPhase, votes, showSystemMsg, systemMsg, meta.players]);
 
-  // 底部字幕条
-  const subtitleBar = subtitle ? (
-    <div className={`subtitle-bar ${subtitle.isWolf ? 'wolf' : ''} ${subtitle.isLastWords ? 'last-words' : ''}`}>
-      <span className="subtitle-speaker">
-        {subtitle.isLastWords && <span className="subtitle-tag last-words-tag">遗言</span>}
-        {subtitle.isWolf && <span className="subtitle-tag wolf-tag">🐺 密谋</span>}
-        {subtitle.speakerName}
-      </span>
-      <span className="subtitle-text">{subtitle.text}</span>
+  const speechBubble = subtitle ? (
+    <div className={`speech-bubble ${subtitle.isWolf ? 'wolf-chat' : ''} ${subtitle.isLastWords ? 'last-words' : ''}`}>
+      <div className="speech-speaker">
+        {speakingPlayer && (
+          <div className="speech-avatar">
+            <ModelAvatar modelKey={speakingPlayer.modelKey} size={40} />
+          </div>
+        )}
+        <span className="speech-name">
+          {subtitle.isLastWords && <span className="speech-tag last-words-tag">遗言</span>}
+          {subtitle.isWolf && <span className="speech-tag wolf-tag">密谋</span>}
+          {subtitle.speakerName}
+        </span>
+      </div>
+      <div className="speech-text">{subtitle.text}</div>
     </div>
   ) : null;
 
-  // 状态栏
-  const statusBar = (
-    <div className="status-bar">
-      <span>第{currentDay}天</span>
-      <span>{PHASE_LABELS[currentPhase] ?? currentPhase}</span>
-      <span>存活: {meta.players.length - deadIds.size}/{meta.players.length}</span>
-      <span>事件: {timeline.currentIndex + 1}/{events.length}</span>
-    </div>
-  );
+  const LayoutComponent = layout === 'landscape' ? LandscapeLayout : PortraitLayout;
 
-  const overlay = (
-    <>
+  return (
+    <div className={`layout-root ${layoutClass} ${themeClass}`}>
+      <div className="phase-header">
+        <div className="phase-header-inner">
+          <span className="phase-icon-small">{isNight ? '🌙' : '☀️'}</span>
+          <span className="phase-day">第{currentDay}{isNight ? '晚' : '天'}</span>
+          <span className="phase-label">{PHASE_LABELS[currentPhase] ?? currentPhase}</span>
+        </div>
+        <span className="phase-meta">存活 {meta.players.length - deadIds.size}/{meta.players.length}</span>
+      </div>
+
+      <LayoutComponent
+        players={meta.players}
+        speakingId={speakingId}
+        deadIds={deadIds}
+        centerContent={centerContent ?? speechBubble}
+      />
+
       <PhaseTransition phase={currentPhase} day={currentDay} visible={showPhaseTransition} />
       <GameOverScreen winner={gameOver?.winner} summary={gameOver?.summary} players={meta.players} visible={!!gameOver} />
-    </>
-  );
 
-  const controlsUI = (
-    <div className="controls">
-      <button onClick={controls.toggle}>
-        {timeline.isPlaying ? '⏸ 暂停' : '▶ 播放'}
-      </button>
-      <button onClick={() => controls.setSpeed(timeline.speed === 1 ? 1.5 : timeline.speed === 1.5 ? 2 : 1)}>
-        {timeline.speed}x
-      </button>
+      <div className="controls">
+        <button onClick={controls.toggle}>
+          {timeline.isPlaying ? '⏸ 暂停' : '▶ 播放'}
+        </button>
+        <button onClick={() => controls.setSpeed(timeline.speed === 1 ? 1.5 : timeline.speed === 1.5 ? 2 : 1)}>
+          {timeline.speed}x
+        </button>
+      </div>
     </div>
   );
-
-  const layoutProps = {
-    players: meta.players,
-    speakingId,
-    deadIds,
-    centerContent,
-    subtitleBar,
-    statusBar,
-    overlay: <>{overlay}{controlsUI}</>,
-    themeClass,
-  };
-
-  return layout === 'portrait'
-    ? <PortraitLayout {...layoutProps} />
-    : <LandscapeLayout {...layoutProps} />;
 };
 
 export default ReplayPage;

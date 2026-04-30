@@ -7,7 +7,6 @@ function App() {
   const [events, setEvents] = useState<ReplayEvent[]>([]);
   const [error, setError] = useState<string>('');
 
-  // 从 URL 参数读取配置
   const params = new URLSearchParams(window.location.search);
   const session = params.get('session') ?? '';
   const layout = (params.get('layout') ?? 'landscape') as 'landscape' | 'portrait';
@@ -37,26 +36,11 @@ function App() {
   }, [session, dataDir]);
 
   if (error) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', fontFamily: 'monospace', fontSize: 16, color: '#e74c3c',
-        padding: 40, textAlign: 'center',
-      }}>
-        {error}
-      </div>
-    );
+    return <div className="fullscreen-center is-error">{error}</div>;
   }
 
   if (!meta || events.length === 0) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', fontFamily: 'sans-serif', fontSize: 18, color: '#888',
-      }}>
-        加载中...
-      </div>
-    );
+    return <div className="fullscreen-center is-loading">加载中...</div>;
   }
 
   return <ReplayPage meta={meta} events={events} dataDir={dataDir} layout={layout} />;

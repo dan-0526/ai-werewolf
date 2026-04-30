@@ -1,322 +1,176 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* === 重置 === */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body, #root { height: 100%; overflow: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; }
 
-html, body, #root {
-  width: 100%;
+/* === 全屏居中提示（加载/错误） === */
+.fullscreen-center {
   height: 100%;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
 }
+.fullscreen-center.is-error { font-family: monospace; font-size: 16px; color: #e74c3c; }
+.fullscreen-center.is-loading { font-size: 18px; color: #888; }
 
-/* 横屏容器 */
-.layout-landscape {
-  width: 1920px;
-  height: 1080px;
+/* === 根容器 === */
+.layout-root {
   position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  transition: background-color 0.8s ease;
+  transition: background 0.8s ease;
 }
 
-/* 竖屏容器 */
-.layout-portrait {
-  width: 1080px;
-  height: 1920px;
-  position: relative;
-  overflow: hidden;
-  transition: background-color 0.8s ease;
-}
-
-/* 夜晚/白天主题 */
-.theme-night {
-  --bg: #0a0e1a;
-  --surface: #141b2d;
-  --surface-alt: #1a2340;
+/* === 主题（仅背景） === */
+.theme-night, .theme-day {
   --text: #e0e6f0;
   --text-muted: #8892a4;
-  --border: #2a3550;
-  background-color: var(--bg);
+  --surface: rgba(20, 27, 45, 0.85);
+  --border: rgba(60, 80, 120, 0.4);
   color: var(--text);
 }
+.theme-night { background: radial-gradient(ellipse at 50% 30%, #111830, #0a0e1a 60%, #050810); }
+.theme-day   { background: radial-gradient(ellipse at 50% 40%, #3a5a7c, #2a4060 40%, #1a2a40 80%, #0f1a2a); }
 
-.theme-day {
-  --bg: #f5f0e8;
-  --surface: #ffffff;
-  --surface-alt: #f8f6f1;
-  --text: #2c3e50;
-  --text-muted: #7f8c8d;
-  --border: #e0ddd5;
-  background-color: var(--bg);
-  color: var(--text);
-}
-
-/* 玩家头像 */
-.player-avatar {
-  width: var(--avatar-size, 80px);
-  height: var(--avatar-size, 80px);
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid var(--border);
-  transition: border-color 0.3s, filter 0.5s, box-shadow 0.3s;
-}
-
-.player-avatar.speaking {
-  border-color: #f39c12;
-  box-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
-}
-
-.player-avatar.dead {
-  filter: grayscale(1) brightness(0.5);
-}
-
-/* 身份角标 */
-.role-badge {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: white;
-  white-space: nowrap;
-  line-height: 1.4;
-}
-
-/* 发言气泡 */
-.speech-bubble {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 20px;
-  max-width: var(--bubble-max-width, 600px);
-  font-size: var(--font-size-speech, 18px);
-  line-height: 1.6;
-  position: relative;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.speech-bubble.wolf-chat {
-  background: rgba(192, 57, 43, 0.12);
-  border-color: rgba(192, 57, 43, 0.3);
-}
-
-.speech-bubble .speaker-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-
-.speech-bubble .wolf-tag {
-  display: inline-block;
-  background: #c0392b;
-  color: white;
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  margin-left: 6px;
-}
-
-/* 系统消息 */
-.system-message {
-  text-align: center;
-  padding: 12px 24px;
-  background: var(--surface-alt);
-  border-radius: 12px;
-  font-size: 16px;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-}
-
-/* 投票面板 */
-.vote-line {
+/* === 顶部状态栏 === */
+.phase-header {
+  height: 48px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  padding: 4px 0;
+  justify-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.5), transparent);
 }
-
-.vote-arrow {
-  color: var(--text-muted);
+.phase-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 28px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,160,120,0.3);
+  border-radius: 0 0 14px 14px;
+  backdrop-filter: blur(8px);
 }
+.phase-icon-small { font-size: 18px; }
+.phase-day   { font-size: 16px; font-weight: 800; color: #e8d5b0; letter-spacing: 1px; }
+.phase-label { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); }
+.phase-meta { margin-left: auto; padding-right: 20px; font-size: 12px; color: rgba(255,255,255,0.5); }
 
-.vote-count {
-  display: inline-flex;
+/* === 三栏布局 === */
+.main-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+.side-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  padding: 8px 4px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.layout-landscape .side-column { width: 170px; }
+.layout-portrait  .side-column { width: 140px; }
+.center-area {
+  flex: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  border-radius: 12px;
-  background: #e74c3c;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
+  padding: 16px;
+  overflow: hidden;
+  min-width: 0;
 }
 
-/* 阶段转场 */
-.phase-overlay {
-  position: absolute;
-  inset: 0;
+/* === 玩家座位 === */
+.player-seat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.phase-overlay .phase-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.phase-overlay .phase-text {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: 2px;
-}
-
-/* 死亡标记 */
-.death-mark {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  pointer-events: none;
-}
-
-/* 游戏结束 */
-.game-over-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.game-over-overlay .winner-text {
-  font-size: 48px;
-  font-weight: 800;
-  margin-bottom: 24px;
-}
-
-/* 底部信息栏 */
-.status-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  background: rgba(0, 0, 0, 0.6);
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  z-index: 20;
-}
-
-/* 字幕条 — 影视风格 */
-.subtitle-bar {
-  position: absolute;
-  bottom: 36px;
-  left: 0;
-  right: 0;
-  padding: 14px 32px;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff;
-  z-index: 15;
-  display: flex;
-  flex-direction: column;
   gap: 4px;
-  min-height: 60px;
-  backdrop-filter: blur(4px);
+  transition: transform 0.3s, opacity 0.3s;
+}
+.player-seat.is-speaking { transform: scale(1.05); }
+.player-seat.is-dead     { opacity: 0.55; }
+.player-avatar-wrap { position: relative; flex-shrink: 0; }
+.speaking-glow { animation: pulse-glow 1.5s ease-in-out infinite; }
+@keyframes pulse-glow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+.death-overlay {
+  position: absolute; inset: 6px; border-radius: 50%;
+  background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center; z-index: 5;
+}
+.death-overlay span {
+  color: #ff6b6b; font-size: 14px; font-weight: 800;
+  letter-spacing: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+.role-badge {
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 700;
+  color: white; white-space: nowrap; line-height: 1.5; z-index: 6;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.player-info { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.seat-number { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.player-name {
+  font-size: 11px; font-weight: 600; color: var(--text); text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px;
+}
+/* === 台词气泡 === */
+.speech-bubble {
+  max-width: 85%; padding: 20px 28px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3); word-break: break-word;
+}
+.speech-bubble.wolf-chat  { background: rgba(120,20,10,0.35); border-color: rgba(192,57,43,0.4); }
+.speech-bubble.last-words { background: rgba(0,0,0,0.5); border-color: rgba(127,140,141,0.4); }
+.speech-speaker { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.speech-avatar  { flex-shrink: 0; border-radius: 50%; overflow: hidden; }
+.speech-name    { font-size: 14px; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+.speech-tag     { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: white; }
+.speech-tag.wolf-tag       { background: #c0392b; }
+.speech-tag.last-words-tag { background: #7f8c8d; }
+.speech-text { font-size: 20px; line-height: 1.6; font-weight: 500; color: var(--text); }
+.layout-portrait .speech-text { font-size: 18px; }
+
+/* === 系统消息 === */
+.system-message {
+  text-align: center; padding: 16px 28px; background: var(--surface);
+  border-radius: 12px; font-size: 16px; color: var(--text-muted);
+  border: 1px solid var(--border); backdrop-filter: blur(8px);
 }
 
-.subtitle-bar .subtitle-speaker {
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* === 投票 === */
+.vote-line  { display: flex; align-items: center; gap: 8px; font-size: 15px; padding: 4px 0; }
+.vote-arrow { color: var(--text-muted); }
+.vote-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 24px; border-radius: 12px;
+  background: #e74c3c; color: white; font-size: 13px; font-weight: 700;
 }
 
-.subtitle-bar .subtitle-text {
-  font-size: 20px;
-  line-height: 1.6;
-  font-weight: 500;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+/* === 覆盖层（转场 + 结束画面） === */
+.phase-overlay, .game-over-overlay {
+  position: absolute; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none;
 }
+.phase-overlay .phase-icon { font-size: 64px; margin-bottom: 16px; }
+.phase-overlay .phase-text { font-size: 32px; font-weight: 700; letter-spacing: 2px; }
+.game-over-overlay .winner-text { font-size: 48px; font-weight: 800; margin-bottom: 24px; }
 
-.subtitle-bar .subtitle-tag {
-  display: inline-block;
-  padding: 1px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  color: white;
-}
-
-.subtitle-bar .wolf-tag {
-  background: #c0392b;
-}
-
-.subtitle-bar .last-words-tag {
-  background: #7f8c8d;
-}
-
-/* 狼人密谋字幕 */
-.subtitle-bar.wolf {
-  background: rgba(120, 20, 10, 0.8);
-  border-left: 4px solid #c0392b;
-}
-
-/* 遗言字幕 */
-.subtitle-bar.last-words {
-  background: rgba(0, 0, 0, 0.85);
-  border-left: 4px solid #7f8c8d;
-  font-style: italic;
-}
-
-/* 竖屏字幕调整 */
-.layout-portrait .subtitle-bar {
-  padding: 16px 24px;
-}
-
-.layout-portrait .subtitle-bar .subtitle-text {
-  font-size: 24px;
-}
-
-/* 播放控制 */
-.controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  gap: 8px;
-  z-index: 50;
-}
-
+/* === 控制按钮 === */
+.controls { position: absolute; top: 8px; right: 12px; display: flex; gap: 8px; z-index: 50; }
 .controls button {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 13px;
+  padding: 6px 14px; border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px; background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.8);
+  cursor: pointer; font-size: 13px; backdrop-filter: blur(4px); transition: background 0.2s;
 }
-
-.controls button:hover {
-  background: var(--surface-alt);
-}
+.controls button:hover { background: rgba(0,0,0,0.7); }
