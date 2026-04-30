@@ -59,9 +59,18 @@ test('GPT provider can use Responses API wire format', async () => {
     requestedUrl = String(input);
     requestHeaders = new Headers(init?.headers);
     requestBody = JSON.parse(String(init?.body));
-    return new Response(JSON.stringify({
-      output_text: 'OK',
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return new Response([
+      'event: response.output_text.delta',
+      'data: {"type":"response.output_text.delta","delta":"O"}',
+      '',
+      'event: response.output_text.delta',
+      'data: {"type":"response.output_text.delta","delta":"K"}',
+      '',
+      'event: response.completed',
+      'data: {"type":"response.completed","response":{"status":"completed"}}',
+      '',
+      '',
+    ].join('\n'), { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
   }) as typeof fetch;
 
   try {
@@ -78,8 +87,20 @@ test('GPT provider can use Responses API wire format', async () => {
     assert.equal(response, 'OK');
     assert.equal(requestedUrl, 'https://gpt-ai.example/v1/responses');
     assert.ok(requestHeaders!.get('session_id'));
+    assert.ok(requestHeaders!.get('x-client-request-id'));
+    assert.equal(requestHeaders!.get('Accept'), 'text/event-stream');
     assert.equal(requestBody.model, 'gpt-5.4');
-    assert.deepEqual(requestBody.input, [{ role: 'user', content: 'ping' }]);
+    assert.equal(requestBody.stream, true);
+    assert.equal(requestBody.store, false);
+    assert.deepEqual(requestBody.reasoning, { effort: 'medium' });
+    assert.deepEqual(requestBody.text, { verbosity: 'low' });
+    assert.deepEqual(requestBody.input, [
+      {
+        type: 'message',
+        role: 'user',
+        content: [{ type: 'input_text', text: 'ping' }],
+      },
+    ]);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -92,9 +113,17 @@ test('GPT provider preserves Codex API base path for Responses API', async () =>
   let requestedUrl = '';
   globalThis.fetch = (async (input: string | URL | Request) => {
     requestedUrl = String(input);
-    return new Response(JSON.stringify({ output_text: 'OK' }), {
+    return new Response([
+      'event: response.output_text.delta',
+      'data: {"type":"response.output_text.delta","delta":"OK"}',
+      '',
+      'event: response.completed',
+      'data: {"type":"response.completed","response":{"status":"completed"}}',
+      '',
+      '',
+    ].join('\n'), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/event-stream' },
     });
   }) as typeof fetch;
 

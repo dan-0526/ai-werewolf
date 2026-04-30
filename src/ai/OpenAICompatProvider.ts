@@ -1,4 +1,4 @@
-// OpenAICompatProvider — DeepSeek / Kimi / 豆包 / GPT (chat/completions)
+// OpenAICompatProvider — DeepSeek / Kimi / 豆包 / GPT
 
 import type { AIProvider, ChatMessage } from './AIProvider.js';
 import { randomUUID } from 'node:crypto';
@@ -31,7 +31,15 @@ export class OpenAICompatProvider implements AIProvider {
       Authorization: `Bearer ${this.apiKey}`,
     };
     if (this.wireAPI === 'responses') {
+      headers.Accept = 'text/event-stream';
+      headers.originator = 'Codex Desktop';
       headers.session_id = this.sessionId;
+      headers['x-client-request-id'] = this.sessionId;
+      headers['x-codex-turn-metadata'] = JSON.stringify({
+        turn_id: this.sessionId,
+        workspaces: {},
+        sandbox: 'seatbelt',
+      });
     }
 
     const resp = await fetch(url, {
@@ -51,6 +59,13 @@ export class OpenAICompatProvider implements AIProvider {
       throw new Error(`${this.modelName} API returned empty response`);
     }
 
+    if (this.wireAPI === 'responses') {
+      const responseText = this.extractResponsesText(text);
+      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+      console.log(`  [${this.modelName}] done in ${elapsed}s`);
+      return responseText;
+    }
+
     const data = JSON.parse(text);
 
     const businessError = data as { code?: number; message?: string };
@@ -66,11 +81,35 @@ export class OpenAICompatProvider implements AIProvider {
 
   private buildRequestBody(messages: ChatMessage[]): Record<string, unknown> {
     if (this.wireAPI === 'responses') {
+      const instructions = messages
+        .filter((message) => message.role === 'system')
+        .map((message) => message.content)
+        .join('\n\n') || undefined;
+      const input = messages
+        .filter((message) => message.role !== 'system')
+        .map((message) => ({
+          type: 'message',
+          role: message.role,
+          content: [{ type: 'input_text', text: message.content }],
+        }));
+
       return {
         model: this.modelName,
-        input: messages,
-        max_output_tokens: 1024,
-        temperature: 0.8,
+        ...(instructions ? { instructions } : {}),
+        input: input.length > 0 ? input : [{
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text: '请开始。' }],
+        }],
+        stream: true,
+        store: false,
+        reasoning: { effort: 'medium' },
+        text: { verbosity: 'low' },
+        include: ['reasoning.encrypted_content'],
+        tools: [],
+        tool_choice: 'auto',
+        parallel_tool_calls: true,
+        prompt_cache_key: this.sessionId,
       };
     }
 
@@ -80,6 +119,49 @@ export class OpenAICompatProvider implements AIProvider {
       max_tokens: 1024,
       temperature: 0.8,
     };
+  }
+
+  private extractResponsesText(text: string): string {
+    if (text.trim().startsWith('{')) {
+      const data = JSON.parse(text);
+      const businessError = data as { code?: number; message?: string };
+      if (typeof businessError.code === 'number' && businessError.code !== 0) {
+        throw new Error(`${this.modelName} API error (${businessError.code}): ${businessError.message ?? text.slice(0, 200)}`);
+      }
+      return this.extractText(data);
+    }
+
+    let result = '';
+    for (const block of text.split('\n\n')) {
+      const dataLines = block
+        .split('\n')
+        .filter((line) => line.startsWith('data: '))
+        .map((line) => line.slice(6));
+      if (dataLines.length === 0) continue;
+
+      const data = dataLines.join('\n').trim();
+      if (!data || data === '[DONE]') continue;
+
+      try {
+        const event = JSON.parse(data) as {
+          delta?: string;
+          type?: string;
+          response?: unknown;
+        };
+        if (typeof event.delta === 'string') {
+          result += event.delta;
+        } else if (event.type === 'response.completed' && !result) {
+          result += this.extractText(event.response);
+        }
+      } catch {
+        // Ignore malformed SSE chunks; the final empty-result guard catches bad streams.
+      }
+    }
+
+    if (!result.trim()) {
+      throw new Error(`${this.modelName} API returned no text in Responses stream`);
+    }
+    return result;
   }
 
   private extractText(data: unknown): string {
