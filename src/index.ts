@@ -48,10 +48,14 @@ if (config.roles.assignment === 'random') {
   roleList = shuffleArray(roleList, config.roles.seed ?? undefined);
 }
 
-// 创建玩家
-const playerEntries = Object.entries(config.players)
+// 创建玩家（随机座位顺序）
+let playerEntries = Object.entries(config.players)
   .map(([seat, cfg]) => ({ seat: parseInt(seat), ...cfg }))
   .sort((a, b) => a.seat - b.seat);
+
+// 随机打乱模型的座位分配
+const shuffledModels = shuffleArray(playerEntries.map((e) => e.model));
+playerEntries = playerEntries.map((entry, i) => ({ ...entry, model: shuffledModels[i] }));
 
 if (playerEntries.length !== roleList.length) {
   throw new Error(`玩家数量（${playerEntries.length}）与角色数量（${roleList.length}）不匹配`);
@@ -61,9 +65,14 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'claude-opus': 'Opus',
   'claude-sonnet': 'Sonnet',
   'gpt-5.4': 'GPT',
-  'deepseek-v3': 'DeepSeek-V3',
-  'deepseek-r1': 'DeepSeek-R1',
+  'deepseek-v3': 'DS-V3',
+  'deepseek-v4': 'DS-V4',
+  'deepseek-r1': 'DS-R1',
   'kimi': 'Kimi',
+  'qwen': 'Qwen',
+  'qwen-big': 'Qwen-397B',
+  'doubao-character': '豆包·戏精',
+  'doubao-pro': '豆包·Pro',
   'doubao': '豆包',
   'mock': 'Mock',
 };
