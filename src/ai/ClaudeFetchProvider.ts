@@ -1,4 +1,4 @@
-// ClaudeFetchProvider — 用原生 fetch 调 Claude Messages API
+// ClaudeFetchProvider — 用原生 fetch + streaming 调 Claude Messages API
 
 import type { AIProvider, ChatMessage } from './AIProvider.js';
 
@@ -50,10 +50,11 @@ export class ClaudeFetchProvider implements AIProvider {
       body: JSON.stringify({
         model: this.modelName,
         max_tokens: 512,
+        stream: true,
         ...(system ? { system } : {}),
         messages: rest,
       }),
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(120000),
     });
 
     if (!resp.ok) {
@@ -61,14 +62,48 @@ export class ClaudeFetchProvider implements AIProvider {
       throw new Error(`${this.modelName} API error (${resp.status}): ${text.slice(0, 200)}`);
     }
 
-    const data = (await resp.json()) as {
-      content: Array<{ type: string; text?: string }>;
-    };
+    // 从 SSE 流中拼出完整文本
+    const text = await this.readStream(resp);
 
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     console.log(`  [${this.modelName}] done in ${elapsed}s`);
 
-    const textBlock = data.content?.find((b) => b.type === 'text');
-    return textBlock?.text ?? '';
+    return text;
+  }
+
+  private async readStream(resp: Response): Promise<string> {
+    const reader = resp.body?.getReader();
+    if (!reader) throw new Error('No response body');
+
+    const decoder = new TextDecoder();
+    let result = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+
+        try {
+          const event = JSON.parse(data);
+          // content_block_delta 事件包含文本片段
+          if (event.type === 'content_block_delta' && event.delta?.text) {
+            result += event.delta.text;
+          }
+        } catch {
+          // 忽略非 JSON 行
+        }
+      }
+    }
+
+    return result;
   }
 }

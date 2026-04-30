@@ -1,6 +1,7 @@
 // AI 狼人杀 — 入口
 
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+loadEnv({ override: true });
 import { readFileSync } from 'node:fs';
 import { parse as parseYaml } from 'yaml';
 import { createProvider, type ModelConfig } from './ai/ProviderFactory.js';

@@ -35,6 +35,9 @@ class GameEventBus extends EventEmitter {
       case 'system_message':
         console.log(`[${ts}] [系统] ${e.content}`);
         break;
+      case 'action_result':
+        console.log(`[${ts}] [上帝] ${e.playerId}号 ${e.action}${e.result ? ': ' + e.result : ''}`);
+        break;
       case 'game_over':
         console.log(`\n[${ts}] 🎉 游戏结束！${e.winner === 'werewolf' ? '狼人' : '好人'}阵营获胜！`);
         console.log(`[${ts}] ${e.summary}`);
