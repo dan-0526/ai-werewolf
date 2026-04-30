@@ -62,18 +62,17 @@ if (playerEntries.length !== roleList.length) {
 }
 
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
-  'claude-opus': 'Opus',
-  'claude-sonnet': 'Sonnet',
-  'gpt-5.4': 'GPT',
-  'deepseek-v3': 'DS-V3',
-  'deepseek-v4': 'DS-V4',
-  'deepseek-r1': 'DS-R1',
-  'kimi': 'Kimi',
-  'qwen': 'Qwen',
-  'qwen-big': 'Qwen-397B',
-  'doubao-character': '豆包·戏精',
-  'doubao-pro': '豆包·Pro',
-  'doubao': '豆包',
+  'claude-opus': 'Claude Opus 4.6',
+  'claude-sonnet': 'Claude Sonnet 4.6',
+  'gpt-5.4': 'GPT-5.4',
+  'deepseek-v4': 'DeepSeek V4',
+  'deepseek-r1': 'DeepSeek R1',
+  'kimi': 'Kimi K2.6',
+  'qwen': 'Qwen 3.5',
+  'qwen-big': 'Qwen 3.5-397B',
+  'doubao-character': 'Custom A',
+  'doubao-pro': 'Custom B',
+  'glm': 'GLM 5.1',
   'mock': 'Mock',
 };
 
