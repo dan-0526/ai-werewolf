@@ -1,0 +1,38 @@
+# 测试用配置 — 全 Mock 模式
+
+game:
+  name: "AI 狼人杀 Mock 测试局"
+  discussion_rounds: 1
+  wolf_chat_rounds: 1
+  speak_delay_ms: 100
+  language: "zh-CN"
+
+rules:
+  sheriff: false
+  last_words: true
+  witch_first_night_self_heal: true
+  witch_same_night_heal_poison: false
+  hunter_poisoned_can_shoot: false
+  tie_vote: revote_once
+  wolf_night_mode: vote
+  day_speak_order: seat
+  reveal_on_death: false
+
+roles:
+  assignment: fixed
+  list: [werewolf, werewolf, werewolf, seer, witch, hunter, villager, villager, villager]
+
+models:
+  mock:
+    provider: mock
+
+players:
+  1: { model: mock, role: werewolf }
+  2: { model: mock, role: werewolf }
+  3: { model: mock, role: werewolf }
+  4: { model: mock, role: seer }
+  5: { model: mock, role: witch }
+  6: { model: mock, role: hunter }
+  7: { model: mock, role: villager }
+  8: { model: mock, role: villager }
+  9: { model: mock, role: villager }
