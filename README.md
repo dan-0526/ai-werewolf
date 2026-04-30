@@ -37,7 +37,7 @@ npx tsx src/index.ts
 npx tsx src/index.ts
 
 # 自选阵容：命令行传 9 个模型名
-npx tsx src/index.ts claude-opus claude-sonnet deepseek-v4 deepseek-r1 kimi qwen doubao-character doubao-pro glm
+npx tsx src/index.ts claude-opus claude-sonnet deepseek-v4 deepseek-r1 kimi qwen custom-a custom-b glm
 
 # 从文件读取阵容（每行一个模型名，# 开头为注释）
 npx tsx src/index.ts --file lineup.txt
@@ -79,7 +79,7 @@ src/
 ├── ai/                   # AI Provider 抽象层
 │   ├── AIProvider.ts     # 统一接口
 │   ├── ClaudeFetchProvider.ts  # Claude（SSE streaming）
-│   ├── OpenAICompatProvider.ts # DeepSeek/Kimi/Qwen/豆包/GLM/GPT
+│   ├── OpenAICompatProvider.ts # OpenAI-compatible/GPT
 │   └── ProviderFactory.ts      # 根据配置创建实例
 ├── game/
 │   ├── GameMaster.ts     # 状态机 + 流程编排

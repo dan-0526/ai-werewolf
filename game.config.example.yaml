@@ -65,17 +65,17 @@ models:
     wire_api: responses
     timeout_ms: 60000
 
-  doubao-character:
+  custom-a:
     provider: openai-compat
     model: your-custom-model-a
     api_key_env: CUSTOM_LLM_API_KEY
-    base_url: https://llm-gateway.example.test/v1
+    base_url_env: CUSTOM_LLM_BASE_URL
 
-  doubao-pro:
+  custom-b:
     provider: openai-compat
     model: your-custom-model-b
     api_key_env: CUSTOM_LLM_API_KEY
-    base_url: https://llm-gateway.example.test/v1
+    base_url_env: CUSTOM_LLM_BASE_URL
 
   glm:
     provider: openai-compat
@@ -90,7 +90,7 @@ players:
   3: { model: deepseek-r1 }
   4: { model: kimi }
   5: { model: gpt-5.4 }
-  6: { model: doubao-character }
-  7: { model: doubao-pro }
+  6: { model: custom-a }
+  7: { model: custom-b }
   8: { model: glm }
   9: { model: claude-opus }
