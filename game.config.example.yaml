@@ -1,0 +1,96 @@
+# 示例配置。复制为 game.config.yaml 后按本地环境修改。
+# game.config.yaml 已被 git 忽略，适合放私有 API key 环境变量名、私有 base URL 和临时比赛阵容。
+
+game:
+  name: "AI 狼人杀 第4局（9模型全明星赛）"
+  discussion_rounds: 1
+  wolf_chat_rounds: 1
+  speak_delay_ms: 500
+  language: "zh-CN"
+
+rules:
+  sheriff: false
+  last_words: true
+  witch_first_night_self_heal: true
+  witch_same_night_heal_poison: false
+  hunter_poisoned_can_shoot: false
+  tie_vote: revote_once
+  wolf_night_mode: vote
+  day_speak_order: seat
+  reveal_on_death: false
+
+roles:
+  assignment: random
+  seed: null
+  list: [werewolf, werewolf, werewolf, seer, witch, hunter, villager, villager, villager]
+
+models:
+  claude-sonnet:
+    provider: claude
+    model: claude-sonnet-4-6
+    api_key_env: ANTHROPIC_AUTH_TOKEN
+    base_url_env: ANTHROPIC_BASE_URL
+    auth_mode: bearer
+
+  claude-opus:
+    provider: claude
+    model: claude-opus-4-6
+    api_key_env: ANTHROPIC_AUTH_TOKEN
+    base_url_env: ANTHROPIC_BASE_URL
+    auth_mode: bearer
+
+  deepseek-v4:
+    provider: openai-compat
+    model: deepseek-chat
+    api_key_env: DEEPSEEK_API_KEY
+    base_url: https://api.deepseek.com/v1
+
+  deepseek-r1:
+    provider: openai-compat
+    model: deepseek-reasoner
+    api_key_env: DEEPSEEK_API_KEY
+    base_url: https://api.deepseek.com/v1
+
+  kimi:
+    provider: openai-compat
+    model: Pro/moonshotai/Kimi-K2.6
+    api_key_env: SILICONFLOW_API_KEY
+    base_url: https://api.siliconflow.cn/v1
+
+  gpt-5.4:
+    provider: gpt
+    model: gpt-5.4
+    api_key_env: GPT_API_KEY
+    base_url_env: GPT_BASE_URL
+    wire_api: responses
+    timeout_ms: 60000
+
+  doubao-character:
+    provider: openai-compat
+    model: your-custom-model-a
+    api_key_env: CUSTOM_LLM_API_KEY
+    base_url: https://llm-gateway.example.test/v1
+
+  doubao-pro:
+    provider: openai-compat
+    model: your-custom-model-b
+    api_key_env: CUSTOM_LLM_API_KEY
+    base_url: https://llm-gateway.example.test/v1
+
+  glm:
+    provider: openai-compat
+    model: Pro/zai-org/GLM-5.1
+    api_key_env: SILICONFLOW_API_KEY
+    base_url: https://api.siliconflow.cn/v1
+
+# 9 个不同模型，每个品牌一席
+players:
+  1: { model: claude-sonnet }
+  2: { model: deepseek-v4 }
+  3: { model: deepseek-r1 }
+  4: { model: kimi }
+  5: { model: gpt-5.4 }
+  6: { model: doubao-character }
+  7: { model: doubao-pro }
+  8: { model: glm }
+  9: { model: claude-opus }
