@@ -3,3 +3,8 @@ dist/
 .env
 game.config.yaml
 logs/
+
+# replay
+replay/node_modules/
+replay/public/data/
+*.mp3
