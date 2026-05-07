@@ -187,11 +187,7 @@ export class OpenAICompatProvider implements AIProvider {
       }
 
       // content 为空但有 reasoning_content → reasoning 模型只产出了思考链
-      // 尝试从思考链中提取 JSON（有些模型会把回复混在思考链末尾）
-      if (typeof reasoning === 'string' && reasoning.trim()) {
-        const jsonMatch = reasoning.match(/(\{[\s\S]*\})\s*$/);
-        if (jsonMatch) return { content: jsonMatch[1], reasoning };
-      }
+      // 不从思考链中猜测答案，返回空让上层重试并追加格式提醒
 
       // 两个都有但 content 是空字符串 → 返回空，让上层重试
       return { content: '', reasoning: (typeof reasoning === 'string' && reasoning.trim()) ? reasoning : undefined };

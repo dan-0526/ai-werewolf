@@ -679,6 +679,11 @@ ${allSpeeches}
         if (!response || !response.trim()) {
           if (attempt < maxRetries) {
             console.warn(`  [RETRY] ${player.name} 返回空内容，第${attempt + 1}次重试...`);
+            // 追加格式提醒，帮助推理模型把答案输出到 content 字段
+            player.messageHistory.push({
+              role: 'user',
+              content: '你的回复为空。请直接输出纯 JSON（第一个字符是 {，最后一个字符是 }），不要输出其他内容。',
+            });
             await sleep(2000 * (attempt + 1));
             continue;
           }
