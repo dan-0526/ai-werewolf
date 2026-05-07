@@ -1,22 +1,22 @@
 import { type FC } from 'react';
 
-// 每个 AI 模型的品牌配置
-const MODEL_BRANDS: Record<string, { color: string; bg: string; icon: string; label: string }> = {
-  'claude-opus':      { color: '#D4A574', bg: '#2D1F14', icon: 'C',  label: 'Opus' },
-  'claude-sonnet':    { color: '#D4A574', bg: '#1A1410', icon: 'C',  label: 'Sonnet' },
-  'deepseek-v4':      { color: '#4D9EFF', bg: '#0A1628', icon: 'D',  label: 'V4' },
-  'deepseek-r1':      { color: '#4D9EFF', bg: '#0A1628', icon: 'D',  label: 'R1' },
-  'kimi':             { color: '#6C5CE7', bg: '#1A1230', icon: 'K',  label: 'Kimi' },
-  'minimax':          { color: '#A855F7', bg: '#1E0A30', icon: 'M',  label: 'MiniMax' },
-  'doubao-character':  { color: '#00D4AA', bg: '#0A2820', icon: '豆', label: 'Character' },
-  'doubao-pro':       { color: '#00D4AA', bg: '#0A2820', icon: '豆', label: 'Pro' },
-  'glm':              { color: '#3B82F6', bg: '#0A1428', icon: 'G',  label: 'GLM' },
-  'ernie':            { color: '#EF4444', bg: '#280A0A', icon: 'E',  label: 'ERNIE' },
-  'qwen':             { color: '#F97316', bg: '#281A0A', icon: 'Q',  label: 'Qwen' },
-  'gpt-5.4':          { color: '#10A37F', bg: '#0A2820', icon: 'G',  label: 'GPT' },
+// modelKey → 头像文件名 + 品牌色
+const MODEL_BRANDS: Record<string, { avatar: string; color: string; label: string }> = {
+  'claude-opus':       { avatar: 'claude.png',   color: '#D4A574', label: 'Opus' },
+  'claude-sonnet':     { avatar: 'claude.png',   color: '#D4A574', label: 'Sonnet' },
+  'deepseek-v4':       { avatar: 'deepseek.png', color: '#4D9EFF', label: 'V4' },
+  'deepseek-r1':       { avatar: 'deepseek.png', color: '#4D9EFF', label: 'R1' },
+  'kimi':              { avatar: 'kimi.png',     color: '#6C5CE7', label: 'Kimi' },
+  'minimax':           { avatar: 'minimax.png',  color: '#A855F7', label: 'MiniMax' },
+  'doubao-character':  { avatar: 'doubao.png',   color: '#00D4AA', label: 'Character' },
+  'doubao-pro':        { avatar: 'doubao.png',   color: '#00D4AA', label: 'Pro' },
+  'glm':               { avatar: 'glm.png',      color: '#3B82F6', label: 'GLM' },
+  'ernie':             { avatar: 'ernie.png',     color: '#EF4444', label: 'ERNIE' },
+  'qwen':              { avatar: 'qwen.png',      color: '#F97316', label: 'Qwen' },
+  'gpt-5.4':           { avatar: 'openai.png',    color: '#10A37F', label: 'GPT' },
 };
 
-const DEFAULT_BRAND = { color: '#888', bg: '#1a1a1a', icon: '?', label: '?' };
+const DEFAULT_BRAND = { avatar: '', color: '#888', label: '?' };
 
 interface Props {
   modelKey: string;
@@ -25,59 +25,33 @@ interface Props {
 
 const ModelAvatar: FC<Props> = ({ modelKey, size }) => {
   const brand = MODEL_BRANDS[modelKey] ?? DEFAULT_BRAND;
-  const fontSize = brand.icon.length > 1 ? size * 0.32 : size * 0.42;
 
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100">
-      <defs>
-        <radialGradient id={`bg-${modelKey}`} cx="30%" cy="30%">
-          <stop offset="0%" stopColor={brand.bg} stopOpacity="1" />
-          <stop offset="100%" stopColor="#000" stopOpacity="1" />
-        </radialGradient>
-        <radialGradient id={`glow-${modelKey}`} cx="50%" cy="50%">
-          <stop offset="0%" stopColor={brand.color} stopOpacity="0.3" />
-          <stop offset="70%" stopColor={brand.color} stopOpacity="0.05" />
-          <stop offset="100%" stopColor={brand.color} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      {/* 背景圆 */}
-      <circle cx="50" cy="50" r="46" fill={`url(#bg-${modelKey})`} />
-
-      {/* 内发光 */}
-      <circle cx="50" cy="50" r="46" fill={`url(#glow-${modelKey})`} />
-
-      {/* 品牌色边框 */}
-      <circle cx="50" cy="50" r="46" fill="none" stroke={brand.color} strokeWidth="2.5" opacity="0.6" />
-
-      {/* 图标/字母 */}
-      <text
-        x="50"
-        y="50"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill={brand.color}
-        fontSize={fontSize}
-        fontWeight="800"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif"
-      >
-        {brand.icon}
-      </text>
-
-      {/* 底部标签 */}
-      <text
-        x="50"
-        y="78"
-        textAnchor="middle"
-        fill={brand.color}
-        fontSize="11"
-        fontWeight="600"
-        opacity="0.7"
-        fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
-      >
-        {brand.label}
-      </text>
-    </svg>
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        border: `2px solid ${brand.color}`,
+        overflow: 'hidden',
+        flexShrink: 0,
+        background: '#0a0e1a',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: `0 0 ${size * 0.2}px ${brand.color}33`,
+      }}
+    >
+      {brand.avatar ? (
+        <img
+          src={`/avatars/${brand.avatar}`}
+          alt={brand.label}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        <span style={{ color: brand.color, fontSize: size * 0.4, fontWeight: 800 }}>?</span>
+      )}
+    </div>
   );
 };
 
