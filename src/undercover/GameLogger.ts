@@ -54,6 +54,8 @@ export class UndercoverLogger {
     switch (e.type) {
       case 'game_start':
         return `游戏开始！${e.config.playerCount}人局，${e.config.undercoverCount}卧底`;
+      case 'roles_assigned':
+        return null;  // 上帝视角，不写入公开日志
       case 'round_start':
         return `=== 第${e.round}轮 ===`;
       case 'describe':

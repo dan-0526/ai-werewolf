@@ -33,8 +33,10 @@ export type Phase =
 
 export type GameEvent =
   | { type: 'game_start'; players: { id: number; name: string }[]; config: GameConfig }
+  | { type: 'roles_assigned'; assignments: { id: number; name: string; role: Role; word: string }[]; wordPair: WordPair }
   | { type: 'round_start'; round: number }
   | { type: 'describe'; playerId: number; playerName: string; content: string }
   | { type: 'vote'; voterId: number; targetId: number }
   | { type: 'elimination'; playerId: number; playerName: string; role: Role; word: string }
+  | { type: 'guess_word'; playerId: number; playerName: string; guess: string; correct: boolean }
   | { type: 'game_over'; winner: Role; summary: string };

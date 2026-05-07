@@ -13,7 +13,7 @@ import { WORD_PAIRS } from './WordBank.js';
 // 加载配置
 const configRaw = readFileSync('undercover.config.yaml', 'utf-8');
 const config = parseYaml(configRaw) as {
-  game: { name: string; player_count: number; undercover_count: number; blank_count: number; max_rounds: number };
+  game: { name: string; player_count: number; undercover_count: number; blank_count: number; max_rounds: number; word_pair?: { civilian: string; undercover: string } };
   models: Record<string, ModelConfig>;
   players: Record<string, { model: string }>;
 };
@@ -62,8 +62,10 @@ const players: Player[] = playerEntries.map(([seat, cfg]) => {
   };
 });
 
-// 随机选词对
-const wordPair = WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)];
+// 选词对：配置指定 > 随机
+const wordPair = config.game.word_pair
+  ? { civilian: config.game.word_pair.civilian, undercover: config.game.word_pair.undercover }
+  : WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)];
 
 console.log(`\n🕵️ ${config.game.name}`);
 console.log(`\n=== 参赛选手 ===`);
@@ -79,6 +81,14 @@ console.log(`日志目录: logs/undercover/game-${game.getSessionId()}.*\n`);
 game.on('game-event', (event) => {
   const ts = new Date().toLocaleTimeString();
   switch (event.type) {
+    case 'roles_assigned':
+      console.log(`\n[${ts}] 👁️ 上帝视角 · 角色分配：`);
+      for (const a of event.assignments) {
+        const roleLabel = a.role === 'undercover' ? '🔴 卧底' : a.role === 'blank' ? '⚪ 白板' : '🔵 平民';
+        console.log(`  ${a.name} → ${roleLabel}（词：${a.word}）`);
+      }
+      console.log();
+      break;
     case 'round_start':
       console.log(`\n[${ts}] === 第${event.round}轮 ===`);
       break;
@@ -90,6 +100,9 @@ game.on('game-event', (event) => {
       break;
     case 'elimination':
       console.log(`[${ts}] ❌ ${event.playerName} 被淘汰（身份：${event.role}，词：${event.word}）`);
+      break;
+    case 'guess_word':
+      console.log(`[${ts}] 🎯 ${event.playerName} 猜测平民词：「${event.guess}」→ ${event.correct ? '✅ 猜对了！卧底翻盘！' : '❌ 猜错了'}`);
       break;
     case 'game_over':
       console.log(`\n[${ts}] 🎉 ${event.summary}`);

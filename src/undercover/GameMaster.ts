@@ -1,6 +1,6 @@
 // 谁是卧底 — 游戏主控
 
-import type { Player, GameConfig, WordPair, Role, GameEvent } from './GameState.js';
+import type { Player, GameConfig, WordPair, Role, GameEvent, } from './GameState.js';
 import { buildSystemPrompt } from './SystemPrompts.js';
 import { WORD_PAIRS } from './WordBank.js';
 import { UndercoverLogger } from './GameLogger.js';
@@ -14,6 +14,7 @@ export class UndercoverGameMaster extends EventEmitter {
   private round = 0;
   private wordPair: WordPair;
   private logger: UndercoverLogger;
+  private undercoverWinByGuess = false;
 
   constructor(players: Player[], config: GameConfig, wordPair?: WordPair) {
     super();
@@ -30,6 +31,11 @@ export class UndercoverGameMaster extends EventEmitter {
       type: 'game_start',
       players: this.players.map(p => ({ id: p.id, name: p.name })),
       config: this.config,
+    });
+    this.emitEvent({
+      type: 'roles_assigned',
+      assignments: this.players.map(p => ({ id: p.id, name: p.name, role: p.role, word: p.word })),
+      wordPair: this.wordPair,
     });
 
     while (!this.isGameOver()) {
@@ -84,9 +90,15 @@ export class UndercoverGameMaster extends EventEmitter {
 
   private async describePhase(): Promise<void> {
     const alive = this.getAlivePlayers();
+    // 白板不排第一位发言——没有词需要先听别人描述
+    const ordered = [...alive];
+    if (ordered.length > 1 && ordered[0].role === 'blank') {
+      const [blank] = ordered.splice(0, 1);
+      ordered.splice(1, 0, blank);
+    }
     const descriptions: string[] = [];
 
-    for (const player of alive) {
+    for (const player of ordered) {
       const prompt = this.round === 1
         ? '现在是第1轮描述阶段。请用一句话描述你的词，注意不要直接说出词语本身。回复格式：{ "description": "你的描述" }'
         : `现在是第${this.round}轮描述阶段。前面的描述：\n${descriptions.map(d => d).join('\n')}\n\n请用一句话描述你的词。回复格式：{ "description": "你的描述" }`;
@@ -146,10 +158,21 @@ export class UndercoverGameMaster extends EventEmitter {
         role: player.role,
         word: player.word,
       });
+
+      // 卧底被淘汰时可以猜平民的词，猜对则卧底翻盘
+      if (player.role === 'undercover') {
+        const guessCorrect = await this.undercoverGuessWord(player);
+        if (guessCorrect) {
+          this.undercoverWinByGuess = true;
+        }
+      }
     }
   }
 
   private isGameOver(): boolean {
+    // 卧底猜对平民词 → 卧底翻盘
+    if (this.undercoverWinByGuess) return true;
+
     const alive = this.getAlivePlayers();
     const aliveUndercover = alive.filter(p => p.role === 'undercover');
     const aliveCivilians = alive.filter(p => p.role === 'civilian');
@@ -166,10 +189,15 @@ export class UndercoverGameMaster extends EventEmitter {
     const alive = this.getAlivePlayers();
     const aliveUndercover = alive.filter(p => p.role === 'undercover');
 
-    const winner: Role = aliveUndercover.length === 0 ? 'civilian' : 'undercover';
+    const winner: Role = this.undercoverWinByGuess
+      ? 'undercover'
+      : aliveUndercover.length === 0 ? 'civilian' : 'undercover';
+
     const summary = winner === 'civilian'
       ? `平民胜利！成功找出所有卧底。词对：平民「${this.wordPair.civilian}」/ 卧底「${this.wordPair.undercover}」`
-      : `卧底胜利！成功隐藏到最后。词对：平民「${this.wordPair.civilian}」/ 卧底「${this.wordPair.undercover}」`;
+      : this.undercoverWinByGuess
+        ? `卧底胜利！被淘汰后猜对了平民的词。词对：平民「${this.wordPair.civilian}」/ 卧底「${this.wordPair.undercover}」`
+        : `卧底胜利！成功隐藏到最后。词对：平民「${this.wordPair.civilian}」/ 卧底「${this.wordPair.undercover}」`;
 
     this.emitEvent({ type: 'game_over', winner, summary });
   }
@@ -178,9 +206,10 @@ export class UndercoverGameMaster extends EventEmitter {
     return this.players.filter(p => p.alive);
   }
 
-  private async callPlayer(player: Player, maxRetries = 3): Promise<string> {
+  private async callPlayer(player: Player, maxRetries = 5): Promise<string> {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
+        console.log(`  [${player.name}] calling...`);
         const result = await player.provider.chat(player.messageHistory);
         const content = typeof result === 'string' ? result : result.content;
         if (content && content.trim()) {
@@ -189,17 +218,20 @@ export class UndercoverGameMaster extends EventEmitter {
         }
 
         if (attempt < maxRetries - 1) {
+          console.warn(`  [RETRY] ${player.name} 返回空内容，第${attempt + 1}次重试...`);
           player.messageHistory.push({
             role: 'user',
             content: '你的回复为空。请直接输出纯 JSON。',
           });
-          await sleep(2000);
+          await sleep(2000 * (attempt + 1));
         }
-      } catch (e) {
+      } catch (e: any) {
         if (attempt < maxRetries - 1) {
-          await sleep(3000);
+          console.warn(`  [RETRY] ${player.name} 第${attempt + 1}次重试 (${e.message?.slice(0, 50)})`);
+          await sleep(3000 * (attempt + 1));
         } else {
-          throw e;
+          console.error(`  [FAIL] ${player.name} ${maxRetries}次重试后仍失败，使用默认回复`);
+          return '{"description": "我保留意见"}';
         }
       }
     }
@@ -227,6 +259,37 @@ export class UndercoverGameMaster extends EventEmitter {
     // fallback: 随机投一个
     const others = alive.filter(p => p.id !== voterId);
     return others[Math.floor(Math.random() * others.length)].id;
+  }
+
+  private async undercoverGuessWord(player: Player): Promise<boolean> {
+    const guessPrompt = `你已经被投票淘汰了！作为卧底，你现在有一次机会猜测平民的词。如果猜对，卧底阵营直接获胜。\n你的词是「${player.word}」，请猜测平民拿到的词是什么。\n回复格式：{ "guess": "你猜测的平民词" }`;
+
+    player.messageHistory.push({ role: 'user', content: guessPrompt });
+    const response = await this.callPlayer(player);
+    player.messageHistory.push({ role: 'assistant', content: response });
+
+    const guess = this.parseGuess(response);
+    const correct = guess === this.wordPair.civilian;
+
+    this.emitEvent({
+      type: 'guess_word',
+      playerId: player.id,
+      playerName: player.name,
+      guess,
+      correct,
+    });
+
+    return correct;
+  }
+
+  private parseGuess(response: string): string {
+    try {
+      const json = JSON.parse(response);
+      return (json.guess ?? '').trim();
+    } catch {
+      const match = response.match(/"guess"\s*:\s*"([^"]+)"/);
+      return match?.[1]?.trim() ?? response.trim();
+    }
   }
 
   private emitEvent(event: GameEvent): void {
