@@ -4,13 +4,13 @@ import { config as loadEnv } from 'dotenv';
 loadEnv({ override: true });
 import { readFileSync, existsSync } from 'node:fs';
 import { parse as parseYaml } from 'yaml';
-import { createProvider, type ModelConfig } from './ai/ProviderFactory.js';
-import { GameMaster } from './game/GameMaster.js';
-import type { Player, RoleName, GameRules } from './game/GameState.js';
-import { getFaction } from './game/GameState.js';
-import { shuffleArray } from './utils/helpers.js';
-import { GameLogger } from './utils/GameLogger.js';
-import { eventBus } from './server/GameEventBus.js';
+import { createProvider, type ModelConfig } from '../ai/ProviderFactory.js';
+import { GameMaster } from './GameMaster.js';
+import type { Player, RoleName, GameRules } from './GameState.js';
+import { getFaction } from './GameState.js';
+import { shuffleArray } from '../shared/helpers.js';
+import { GameLogger } from './GameLogger.js';
+import { eventBus } from './GameEventBus.js';
 
 // 加载配置
 const configRaw = readFileSync('game.config.yaml', 'utf-8');
@@ -157,8 +157,8 @@ for (const p of players) {
 console.log('');
 
 // 初始化日志系统
-const logger = new GameLogger('logs');
-console.log(`日志目录: logs/game-${logger.getSessionId()}.*\n`);
+const logger = new GameLogger('logs/werewolf');
+console.log(`日志目录: logs/werewolf/game-${logger.getSessionId()}.*\n`);
 
 // 所有游戏事件自动写入日志
 eventBus.on('game-event', (event) => logger.logEvent(event));

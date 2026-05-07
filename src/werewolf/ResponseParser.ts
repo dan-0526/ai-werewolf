@@ -1,6 +1,6 @@
 // ResponseParser — 解析 AI 回复中的结构化动作
 
-import type { ParsedResponse, GameAction } from '../game/GameState.js';
+import type { ParsedResponse, GameAction } from './GameState.js';
 
 const DEFAULT_ACTION: GameAction = { type: 'skip' };
 

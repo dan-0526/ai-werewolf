@@ -2,7 +2,7 @@
 
 import { mkdirSync, createWriteStream, type WriteStream } from 'node:fs';
 import { join } from 'node:path';
-import type { GameEvent } from '../game/GameState.js';
+import type { GameEvent } from './GameState.js';
 
 export class GameLogger {
   private publicStream: WriteStream;

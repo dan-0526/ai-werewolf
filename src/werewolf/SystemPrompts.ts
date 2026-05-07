@@ -1,6 +1,6 @@
 // SystemPrompts — 各角色的 system prompt 模板
 
-import type { RoleName, Player, GameRules } from '../game/GameState.js';
+import type { RoleName, Player, GameRules } from './GameState.js';
 
 const GAME_RULES_TEMPLATE = `你正在参加一场9人狼人杀游戏。你只有一个目标：让你的阵营获胜。你的每一句话、每一个行动、每一次投票都必须服务于这个目标。
 

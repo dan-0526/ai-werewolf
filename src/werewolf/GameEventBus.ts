@@ -1,7 +1,7 @@
 // GameEventBus — 事件总线，游戏事件 → SSE 推送 + 控制台日志
 
 import { EventEmitter } from 'node:events';
-import type { GameEvent } from '../game/GameState.js';
+import type { GameEvent } from './GameState.js';
 
 class GameEventBus extends EventEmitter {
   emit(event: 'game-event', data: GameEvent): boolean;

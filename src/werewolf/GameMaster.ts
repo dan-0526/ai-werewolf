@@ -6,11 +6,11 @@ import type {
 } from './GameState.js';
 import { getAlivePlayers, getAliveWolves, getPlayerById, getFaction } from './GameState.js';
 import { checkWin } from './WinChecker.js';
-import { eventBus } from '../server/GameEventBus.js';
-import { buildSystemPrompt } from '../prompt/SystemPrompts.js';
-import { parseResponse } from '../prompt/ResponseParser.js';
-import { sleep, shuffleArray, majorityVote, isTie } from '../utils/helpers.js';
-import { GameLogger } from '../utils/GameLogger.js';
+import { eventBus } from './GameEventBus.js';
+import { buildSystemPrompt } from './SystemPrompts.js';
+import { parseResponse } from './ResponseParser.js';
+import { sleep, shuffleArray, majorityVote, isTie } from '../shared/helpers.js';
+import { GameLogger } from './GameLogger.js';
 import type { ChatMessage } from '../ai/AIProvider.js';
 
 // --- GameMaster class ---

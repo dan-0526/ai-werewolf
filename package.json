@@ -1,11 +1,11 @@
 {
-  "name": "ai-werewolf",
-  "version": "0.1.0",
+  "name": "ai-arena",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts",
+    "werewolf": "tsx src/werewolf/index.ts",
+    "undercover": "tsx src/undercover/index.ts",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
