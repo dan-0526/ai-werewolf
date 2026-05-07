@@ -1,0 +1,47 @@
+# 谁是卧底 · 示例配置
+#
+# 复制为 undercover.config.yaml 后再填入自己的模型、base_url 和 API key env。
+# undercover.config.yaml 是本地私有配置，不应该提交到公共仓库。
+
+game:
+  name: "AI 谁是卧底 示例局"
+  player_count: 8
+  undercover_count: 2
+  blank_count: 1
+  max_rounds: 8
+  # 可选：固定词对；删除后会从内置词库随机抽取
+  word_pair: { civilian: "咖啡", undercover: "奶茶" }
+
+models:
+  gpt:
+    provider: openai-compat
+    model: gpt-5.4
+    api_key_env: OPENAI_API_KEY
+    base_url: https://api.openai.com/v1
+
+  claude:
+    provider: claude
+    model: claude-sonnet-4-6
+    api_key_env: ANTHROPIC_API_KEY
+
+  compatible-a:
+    provider: openai-compat
+    model: provider-model-name-a
+    api_key_env: COMPATIBLE_A_API_KEY
+    base_url: https://example.com/v1
+
+  compatible-b:
+    provider: openai-compat
+    model: provider-model-name-b
+    api_key_env: COMPATIBLE_B_API_KEY
+    base_url: https://example.com/v1
+
+players:
+  1: { model: gpt }
+  2: { model: claude }
+  3: { model: compatible-a }
+  4: { model: compatible-b }
+  5: { model: gpt }
+  6: { model: claude }
+  7: { model: compatible-a }
+  8: { model: compatible-b }

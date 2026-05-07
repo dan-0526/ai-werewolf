@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 game.config.yaml
+undercover.config.yaml
 logs/
 
 # replay
