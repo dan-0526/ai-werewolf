@@ -6,6 +6,7 @@
   "scripts": {
     "werewolf": "tsx src/werewolf/index.ts",
     "undercover": "tsx src/undercover/index.ts",
+    "avalon": "tsx src/avalon/index.ts",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
