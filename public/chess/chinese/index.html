@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="classic">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 中国象棋</title>
+  <link rel="stylesheet" href="../assets/themes.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--page-bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      max-width: 800px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .header-players {
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .player-score {
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      background: var(--btn-bg);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--btn-hover);
+    }
+
+    main {
+      display: flex;
+      gap: 20px;
+      padding: 0 20px 20px;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .board-area {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #chessCanvas {
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-bar {
+      padding: 8px 12px;
+      background: var(--status-bg);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .side-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 180px;
+    }
+
+    .move-list {
+      flex: 1;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px;
+      overflow-y: auto;
+      max-height: 400px;
+    }
+
+    .move-list h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .move-list ol {
+      padding-left: 20px;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .controls .btn {
+      flex: 1;
+      min-width: 70px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="header-title">AI 中国象棋</span>
+    <div class="header-players">
+      <div class="player-info">
+        <span class="player-label" id="redPlayer">红方</span>
+        <span class="player-score" id="redScore">0</span>
+      </div>
+      <div class="player-info">
+        <span class="player-label" id="blackPlayer">黑方</span>
+        <span class="player-score" id="blackScore">0</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="btnTheme" class="btn" title="切换主题">🎨 主题</button>
+      <button id="btnThinking" class="btn" title="显示思考过程">🧠 思考</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="board-area">
+      <canvas id="chessCanvas"></canvas>
+      <div class="status-bar" id="statusBar">等待开始...</div>
+    </div>
+    <aside class="side-panel">
+      <div class="move-list" id="moveList">
+        <h3>走法记录</h3>
+        <ol id="moveListItems"></ol>
+      </div>
+      <div class="controls" id="controls">
+        <button class="btn" id="btnNewGame">新对局</button>
+        <button class="btn" id="btnUndo">悔棋</button>
+        <button class="btn" id="btnResign">认输</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- JS modules loaded in order -->
+  <script src="../shared/theme.js"></script>
+  <script src="pieces.js"></script>
+  <script src="board.js"></script>
+  <script src="ws-client.js"></script>
+  <script src="game-controls.js"></script>
+  <script src="move-panel.js"></script>
+</body>
+</html>
