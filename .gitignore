@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 *.config.yaml
+!chess.config.yaml
 logs/
 
 # replay

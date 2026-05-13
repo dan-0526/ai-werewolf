@@ -7,18 +7,22 @@
     "werewolf": "tsx src/werewolf/index.ts",
     "undercover": "tsx src/undercover/index.ts",
     "avalon": "tsx src/avalon/index.ts",
+    "chess": "tsx src/chess/index.ts",
+    "chess:replay": "tsx src/chess/index.ts --replay",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
+    "dotenv": "^16.4.5",
     "express": "^4.21.0",
-    "yaml": "^2.6.0",
-    "dotenv": "^16.4.5"
+    "ws": "^8.20.0",
+    "yaml": "^2.6.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "tsx": "^4.19.0",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.10.0"
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
   }
 }

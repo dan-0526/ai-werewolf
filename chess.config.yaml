@@ -1,0 +1,31 @@
+game:
+  name: "AI Chinese Chess"
+  mode: chinese
+  bo: 3
+  move_delay_ms: 2000
+  max_retries: 3
+  language: zh-CN
+
+models:
+  claude:
+    provider: claude
+    model: claude-opus-4-6
+    api_key_env: ANTHROPIC_AUTH_TOKEN
+    base_url_env: ANTHROPIC_BASE_URL
+    auth_mode: bearer
+
+  gpt:
+    provider: gpt
+    model: gpt-5.5
+    api_key_env: GPT_API_KEY
+    base_url_env: GPT_BASE_URL
+    wire_api: responses
+    timeout_ms: 60000
+
+players:
+  red: { model: claude }
+  black: { model: gpt }
+
+server:
+  port: 3001
+  open_browser: true
