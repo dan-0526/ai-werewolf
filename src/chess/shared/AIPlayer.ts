@@ -80,8 +80,16 @@ export class AIPlayer {
     let retries = 0;
 
     while (retries <= this.maxRetries) {
-      const result = await this.provider.chat([...this.messageHistory]);
-      const raw = result.content;
+      let raw: string;
+      try {
+        const result = await this.provider.chat([...this.messageHistory]);
+        raw = result.content;
+      } catch (err) {
+        // Provider-level error (empty response, timeout, network) — treat as retry
+        console.warn(`  [${this.model}] API error (retry ${retries + 1}/${this.maxRetries}): ${err instanceof Error ? err.message : err}`);
+        retries++;
+        continue;
+      }
       const parsed = this.parseResponse(raw);
 
       if (parsed) {
