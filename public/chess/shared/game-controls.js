@@ -16,6 +16,7 @@ class GameControls {
   /** Detect mode from URL params */
   detectMode() {
     const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'manual') return 'manual';
     return params.has('replay') ? 'replay' : 'live';
   }
 
@@ -24,7 +25,10 @@ class GameControls {
     if (!this.controlsEl) return;
     this.controlsEl.innerHTML = '';
 
-    if (this.mode === 'replay') {
+    if (this.mode === 'manual') {
+      // Manual mode: no controls needed, board.js handles interaction
+      return;
+    } else if (this.mode === 'replay') {
       this.initReplayControls();
     } else {
       this.initLiveControls();

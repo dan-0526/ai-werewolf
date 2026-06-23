@@ -29,6 +29,8 @@ for (let i = 0; i < args.length; i++) {
     configPath = resolve(args[++i]);
   } else if (args[i] === '--replay') {
     replayPath = args[i + 1] ? resolve(args[++i]) : '';
+  } else if (args[i] === '--serve') {
+    replayPath = '__serve_only__';
   }
 }
 
@@ -86,6 +88,12 @@ function broadcast(event: WSEvent): void {
 
 // --- Replay mode ---
 if (replayPath !== null) {
+  if (replayPath === '__serve_only__') {
+    // Serve-only mode: just static files, no match, no replay
+    httpServer.listen(serverPort, () => {
+      console.log(`[Serve] http://localhost:${serverPort}/chess/chinese/?mode=manual`);
+    });
+  } else {
   // Resolve replay file: if empty string, find latest god.jsonl
   let replayFile = replayPath;
   if (!replayFile) {
@@ -110,6 +118,7 @@ if (replayPath !== null) {
   httpServer.listen(serverPort, () => {
     console.log(`[Replay] Server running at http://localhost:${serverPort}/chess`);
   });
+  } // close else branch of serve-only
 } else {
   // --- Live mode ---
   startLiveMatch().catch(err => {

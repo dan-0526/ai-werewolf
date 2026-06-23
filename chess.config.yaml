@@ -16,7 +16,7 @@ models:
 
   gpt:
     provider: gpt
-    model: gpt-5.5
+    model: gpt-5.4
     api_key_env: GPT_API_KEY
     base_url_env: GPT_BASE_URL
     wire_api: responses
